@@ -1,0 +1,28 @@
+{
+  "name": "my-web-editor",
+  "version": "0.0.2",
+  "description": "A custom web editor",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": [],
+  "author": "Youngeui Hong",
+  "license": "ISC",
+  "types": "lib/index.d.ts",
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.16.4",
+    "@mui/material": "^5.16.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "prettier": "3.3.3",
+    "typescript": "^5.5.3"
+  }
+}
