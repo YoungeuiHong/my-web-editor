@@ -1,8 +1,8 @@
-import { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, ChangeEvent } from "react";
 import CollectionsIcon from "@mui/icons-material/Collections";
-import { StyledIconButton } from "@/app/exec-command-editor/components";
-import { EditorPlugin } from "@/app/exec-command-editor/types";
-import { EditorContext } from "@/app/exec-command-editor/context/EditorContext";
+import { EditorContext, EditorContextType } from "../context";
+import { EditorPlugin } from "../types";
+import { StyledIconButton } from "../components";
 
 const alignLeftIcon = `
 <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
@@ -29,29 +29,37 @@ const deleteIcon = `
 <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
-const InsertImageButton = () => {
-  const fileInputRef = useRef(null);
-  const context = useContext(EditorContext);
+const InsertImageButton: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const context = useContext<EditorContextType | undefined>(EditorContext);
+
+  if (!context) {
+    throw new Error("InsertImageButton must be used within an EditorProvider");
+  }
+
   const { editorRef } = context;
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = function (e) {
-        const imgBase64 = e.target.result;
+        const imgBase64 = e.target?.result as string;
         insertImage(imgBase64, "alt", "이미지 설명을 적어주세요");
       };
       reader.readAsDataURL(file);
     }
   };
 
-  function insertImage(image, alt, caption) {
+  function insertImage(image: string, alt: string, caption: string) {
     const editor = editorRef.current;
+    if (!editor) return;
+
     editor.focus();
 
     const selection = window.getSelection();
-    let range;
+    let range: Range;
+
     if (!selection || !selection.rangeCount) {
       range = document.createRange();
       range.selectNodeContents(editor);
@@ -94,12 +102,12 @@ const InsertImageButton = () => {
         const newParagraph = document.createElement("p");
         newParagraph.innerHTML = "<br>";
         figure.insertAdjacentElement("afterend", newParagraph);
-        const range = document.createRange();
-        range.setStart(newParagraph, 0);
-        range.setEnd(newParagraph, 0);
+        const newRange = document.createRange();
+        newRange.setStart(newParagraph, 0);
+        newRange.setEnd(newParagraph, 0);
         const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+        sel?.removeAllRanges();
+        sel?.addRange(newRange);
       }
     });
 
@@ -114,10 +122,14 @@ const InsertImageButton = () => {
 
   useEffect(() => {
     const editor = editorRef.current;
+    if (!editor) return;
 
-    const handleClick = (e) => {
-      if (e.target.tagName === "IMG") {
-        const figure = e.target.closest("figure");
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "IMG") {
+        const figure = target.closest("figure") as HTMLElement;
+        if (!figure) return;
+
         const resizeHandle = document.createElement("div");
         resizeHandle.className = "resize-handle";
         resizeHandle.style.width = "10px";
@@ -140,7 +152,11 @@ const InsertImageButton = () => {
         buttonContainer.style.visibility = "visible";
         buttonContainer.style.zIndex = "10";
 
-        const createIconButton = (iconSvg, onClick, isGrouped) => {
+        const createIconButton = (
+          iconSvg: string,
+          onClick: () => void,
+          isGrouped: boolean,
+        ) => {
           const button = document.createElement("button");
           button.style.backgroundColor = "#fff";
           button.style.color = "#3170EE";
@@ -160,28 +176,34 @@ const InsertImageButton = () => {
         const alignLeft = createIconButton(
           alignLeftIcon,
           () => {
-            figure.parentNode.style.textAlign = "left";
+            if (figure.parentElement) {
+              figure.parentElement.style.textAlign = "left";
+            }
           },
           true,
         );
         const alignCenter = createIconButton(
           alignCenterIcon,
           () => {
-            figure.parentNode.style.textAlign = "center";
+            if (figure.parentElement) {
+              figure.parentElement.style.textAlign = "center";
+            }
           },
           true,
         );
         const alignRight = createIconButton(
           alignRightIcon,
           () => {
-            figure.parentNode.style.textAlign = "right";
+            if (figure.parentElement) {
+              figure.parentElement.style.textAlign = "right";
+            }
           },
           true,
         );
         const deleteImage = createIconButton(
           deleteIcon,
           () => {
-            figure.parentNode.remove();
+            figure.parentElement?.remove();
           },
           false,
         );
@@ -211,34 +233,39 @@ const InsertImageButton = () => {
       }
     };
 
-    const handleDocumentClick = (e) => {
+    const handleDocumentClick = (e: MouseEvent) => {
       const figures = editor.querySelectorAll(".editable-figure");
       figures.forEach((figure) => {
-        const img = figure.querySelector("img");
-        const resizeHandle = figure.querySelector(".resize-handle");
-        const buttonContainer = figure.querySelector(".button-container");
+        const figureElement = figure as HTMLElement;
+        const img = figureElement.querySelector("img");
+        const resizeHandle = figureElement.querySelector(".resize-handle");
+        const buttonContainer =
+          figureElement.querySelector(".button-container");
         if (
           e.target !== img &&
           e.target !== resizeHandle &&
-          (!buttonContainer || !buttonContainer.contains(e.target))
+          (!buttonContainer || !buttonContainer.contains(e.target as Node))
         ) {
-          figure.style.outline = "none";
-          if (resizeHandle) resizeHandle.remove();
-          if (buttonContainer) buttonContainer.remove();
+          figureElement.style.outline = "none";
+          resizeHandle?.remove();
+          buttonContainer?.remove();
         }
       });
     };
 
-    const handleResizeMouseDown = (e) => {
+    const handleResizeMouseDown = (e: MouseEvent) => {
       e.preventDefault();
       let isResizing = true;
-      const img = e.target.closest("figure").querySelector("img");
+      const img = (e.target as HTMLElement)
+        .closest("figure")
+        ?.querySelector("img") as HTMLElement;
+      if (!img) return;
       const originalWidth = img.offsetWidth;
       const originalHeight = img.offsetHeight;
       const originalX = e.clientX;
       const originalY = e.clientY;
 
-      const resizeImage = (e) => {
+      const resizeImage = (e: MouseEvent) => {
         if (isResizing) {
           const deltaX = e.clientX - originalX;
           const newWidth = originalWidth + deltaX;
@@ -260,28 +287,24 @@ const InsertImageButton = () => {
       document.addEventListener("mouseup", stopResize);
     };
 
-    if (editor) {
-      editor.addEventListener("click", handleClick);
-      document.addEventListener("click", handleDocumentClick);
-      editor.addEventListener("mousedown", (e) => {
-        if (e.target.classList.contains("resize-handle")) {
-          handleResizeMouseDown(e);
-        }
-      });
-    }
+    editor.addEventListener("click", handleClick);
+    document.addEventListener("click", handleDocumentClick);
+    editor.addEventListener("mousedown", (e) => {
+      if ((e.target as HTMLElement).classList.contains("resize-handle")) {
+        handleResizeMouseDown(e);
+      }
+    });
 
     return () => {
-      if (editor) {
-        editor.removeEventListener("click", handleClick);
-        document.removeEventListener("click", handleDocumentClick);
-        editor.removeEventListener("mousedown", handleResizeMouseDown);
-      }
+      editor.removeEventListener("click", handleClick);
+      document.removeEventListener("click", handleDocumentClick);
+      editor.removeEventListener("mousedown", handleResizeMouseDown);
     };
-  }, []);
+  }, [editorRef]);
 
   return (
     <>
-      <StyledIconButton onClick={() => fileInputRef.current.click()}>
+      <StyledIconButton onClick={() => fileInputRef.current?.click()}>
         <CollectionsIcon />
       </StyledIconButton>
       <input
