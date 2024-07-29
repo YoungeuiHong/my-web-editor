@@ -1,19 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { styled } from "@mui/system";
-import {
-  FormControl,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-} from "@mui/material";
+import { FormControl, MenuItem, Select } from "@mui/material";
 import { EditorPlugin } from "../types";
 
-type BlockType = "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "p";
+type BlockType = "H1" | "H2" | "H3" | "H4" | "H5" | "H6" | "p" | "선택";
 
 const HeadingButton = () => {
-  const [value, setValue] = useState<BlockType>("p");
+  const [value, setValue] = useState<BlockType>("선택");
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
+  const handleChange = (event) => {
     const newValue = event.target.value as BlockType;
     setValue(newValue);
     document.execCommand("formatBlock", false, newValue);
@@ -21,24 +16,22 @@ const HeadingButton = () => {
 
   const updateBlockType = () => {
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
+    if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const parentElement = range.startContainer.parentElement;
-      if (parentElement) {
-        const tagName = parentElement.tagName.toUpperCase();
-        switch (tagName) {
-          case "H1":
-          case "H2":
-          case "H3":
-          case "H4":
-          case "H5":
-          case "H6":
-          case "P":
-            setValue(tagName as BlockType);
-            break;
-          default:
-            setValue("p");
-        }
+      const tagName = parentElement.tagName.toUpperCase();
+      switch (tagName) {
+        case "H1":
+        case "H2":
+        case "H3":
+        case "H4":
+        case "H5":
+        case "H6":
+        case "P":
+          setValue(tagName as BlockType);
+          break;
+        default:
+          setValue("p");
       }
     }
   };
@@ -63,6 +56,7 @@ const HeadingButton = () => {
         onChange={handleChange}
         MenuProps={MenuProps}
       >
+        <StyledMenuItem value="선택">선택</StyledMenuItem>
         <StyledMenuItem value="p">본문</StyledMenuItem>
         <StyledMenuItem value="H1">제목1</StyledMenuItem>
         <StyledMenuItem value="H2">제목2</StyledMenuItem>
