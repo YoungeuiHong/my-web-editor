@@ -1,28 +1,32 @@
 import React, {
   createContext,
   useRef,
+  useContext,
+  useCallback,
   MutableRefObject,
-  ReactNode,
 } from "react";
 
 interface EditorContextType {
-  editorRef: MutableRefObject<HTMLDivElement | null>;
+  editorRef: MutableRefObject<HTMLElement | null>;
+  getHTML: () => string;
 }
 
-const EditorContext = createContext<EditorContextType | null>(null);
+export const EditorContext = createContext<EditorContextType | undefined>(
+  undefined,
+);
 
-interface EditorProviderProps {
-  children: ReactNode;
-}
+export const useEditor = () => useContext(EditorContext);
 
-const EditorProvider = ({ children }: EditorProviderProps) => {
-  const editorRef = useRef<HTMLDivElement | null>(null);
+export const EditorProvider = ({ children }) => {
+  const editorRef = useRef(null);
+
+  const getHTML = useCallback(() => {
+    return editorRef.current ? editorRef.current.innerHTML : null;
+  }, []);
 
   return (
-    <EditorContext.Provider value={{ editorRef }}>
+    <EditorContext.Provider value={{ editorRef, getHTML }}>
       {children}
     </EditorContext.Provider>
   );
 };
-
-export { EditorContext, EditorProvider };
