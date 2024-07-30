@@ -5,6 +5,7 @@ import React, {
   useRef,
   MutableRefObject,
 } from "react";
+import DOMPurify from "dompurify";
 import { EditorContext, EditorContextType } from "../context";
 
 interface Props {
@@ -26,7 +27,7 @@ export const EditorContentArea: React.FC<Props> = ({ initialHtml }) => {
 
   useEffect(() => {
     if (initialHtml) {
-      setContent(initialHtml);
+      setContent(DOMPurify.sanitize(initialHtml));
     }
   }, [initialHtml]);
 
